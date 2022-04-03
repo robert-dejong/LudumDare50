@@ -1,0 +1,187 @@
+<html>
+    <head>
+        <style>
+            html, body {
+                font-family: Arial, Helvetica, sans-serif;
+                background: #000;
+                color: #fff;
+                margin: 40px 0 0 0;
+                padding: 0;
+            }
+            .menu {
+                text-align: center;
+            }
+            .hidden {
+                display: none;
+            }
+            .screen {
+                position: relative;
+                width: 1024px;
+                height: 768px;
+                display: inline-block;
+                border: 1px solid #fff;
+            }
+            .button {
+                color: #fff;
+                background: #252525;
+                border: 1px solid #fff;
+                padding: 18px 0px;
+                text-decoration: none;
+                font-size: 15px;
+                font-weight: bold;
+                text-transform: uppercase;
+                letter-spacing: 2px;
+                display: inline-block;
+                width: 270px;
+            }
+            .button:hover {
+                background: #707070;
+            }
+            .center {
+                margin: 0;
+                position: absolute;
+                top: 50%;
+                transform: translateY(-50%);
+                width: 100%;
+            }
+            h3 {
+                margin-top: 0;
+                letter-spacing: 3px;
+                text-transform: uppercase;
+                font-size: 22px;
+                font-weight: 600;
+            }
+            .screen .button-container {
+                margin-bottom: 15px;
+            }
+            .screen .button-container:last-child {
+                margin-bottom: 0;
+            }
+            .setting {
+                width: 320px;
+                margin: 0 auto;
+                text-align: left;
+            }
+            label {
+                text-transform: uppercase;
+                letter-spacing: 2px;
+                font-weight: 600;
+                font-size: 16px;
+                margin-bottom: 25px;
+                display: inline-block;
+            }
+            .checkbox-group {
+                float: right;
+            }
+            .checkbox {
+                color: #fff;
+                text-transform: uppercase;
+                font-weight: 600;
+                text-decoration: none;
+                padding-left: 22px;
+                margin-right: 15px;
+            }
+            .checkbox:before {
+                content: '';
+                position: absolute;
+                width: 13px;
+                height: 13px;
+                border-radius: 50%;
+                border: 2px solid #fff;
+                margin-left: -22px;
+            }
+            .checkbox.checked:before {
+                background: #fff;
+            }
+            .screen .checkbox:last-child {
+                margin-right: 0;
+            }
+            .checkbox.checked:hover:before {
+                background: rgb(170, 170, 170);
+            }
+            .checkbox:hover {
+                color: rgb(170, 170, 170);
+            }
+            .checkbox:hover:before {
+                border-color: rgb(170, 170, 170);
+            }
+        </style>
+    </head>
+    <body>
+        <div id="game" class="menu hidden">
+            <div class="screen">
+                <canvas id="canvas" width="1024" height="768"></canvas>
+            </div>
+        </div>
+        
+        <div id="mainMenu" class="menu">
+            <div class="screen">
+                <div class="center">
+                    <h3>Main Menu</h3>
+                    <div class="button-container">
+                        <a href="#" class="button" onclick="gotoMenu(event, 'game')">Start game</a>
+                    </div>
+                    
+                    <div class="button-container">
+                        <a href="#" class="button" onclick="gotoMenu(event, 'settings')">Settings</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="settings" class="menu hidden">
+            <div class="screen">
+                <div class="center">
+                    <h3>Settings</h3>
+                    <div class="setting" data-setting="playSound">
+                        <label>Sound:</label>
+                        <div class="checkbox-group">
+                            <a href="#" class="checkbox checked" onclick="setSetting(event, 'playSound', true)">On</a>
+                            <a href="#" class="checkbox" onclick="setSetting(event, 'playSound', false)">Off</a>
+                        </div>
+                    </div>
+
+                    <div class="button-container">
+                        <a href="#" class="button" onclick="gotoMenu(event, 'mainmenu')">Back to Main Menu</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <script src="./_bundles/my-lib.min.js"></script>
+
+        <script>
+            function gotoMenu(event, menu) {
+                event.preventDefault();
+
+                if (menu === 'game') {
+                    window.gamePaused = false;
+                    document.getElementById("mainMenu").classList.add("hidden");
+                    document.getElementById("settings").classList.add("hidden");
+                    document.getElementById("game").classList.remove("hidden");
+                } else if (menu === 'mainmenu') {
+                    window.gamePaused = true;
+                    document.getElementById("game").classList.add("hidden");
+                    document.getElementById("settings").classList.add("hidden");
+                    document.getElementById("mainMenu").classList.remove("hidden");
+                } else if (menu === 'settings') {
+                    document.getElementById("game").classList.add("hidden");
+                    document.getElementById("mainMenu").classList.add("hidden");
+                    document.getElementById("settings").classList.remove("hidden");
+                }
+            }
+
+            function setSetting(event, key, value) {
+                event.preventDefault();
+                var currentSetting = document.querySelector("[data-setting='" + key + "'] .checked");
+
+                if (currentSetting !== null) {
+                    currentSetting.classList.remove('checked');
+                }
+
+                event.target.classList.add("checked");
+                window[key] = value;
+            }
+        </script>
+    </body>
+</html>
