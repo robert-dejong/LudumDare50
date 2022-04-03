@@ -1,6 +1,7 @@
 import { Screen } from "../core/screen";
 import { InputHandler } from "../input/input-handler";
 import { PlayerStats } from "../player-stats";
+import { ResetGame } from "../reset-game";
 import { Sprites } from "../sprites/sprites";
 
 export class DialogueManager {
@@ -16,7 +17,7 @@ export class DialogueManager {
         this.openDuration = 0;
     }
 
-    public tick(screen: Screen, inputHandler: InputHandler, playerStats: PlayerStats): void {
+    public tick(screen: Screen, inputHandler: InputHandler, playerStats: PlayerStats, resetGame: ResetGame): void {
         if (!this.isShowingDialogue) return;
         
         this.openDuration++;
@@ -35,7 +36,10 @@ export class DialogueManager {
                 inputHandler.resetClick();
 
                 if (playerStats.fireMeter <= 0) {
-                    console.log("To main menu");
+                    window['gamePaused'] = true;
+                    resetGame.reset();
+                    const event = new Event('restart');
+                    window.dispatchEvent(event);
                 }
         }
     }

@@ -46,7 +46,15 @@ export class Entity {
 
             if (this.getCookState() === CookState.Burned) {
                 this.removed = true;
-                const offence = new Offence(Offences.ingredientBurned.text.replace('{name}', this.ingredient.name), Offences.ingredientBurned.cost);
+                worldManager.burnedIngredientsWarning--;
+
+                let offence = new Offence('', Offences.ingredientBurned.cost);
+
+                if (worldManager.burnedIngredientsWarning <= 0) {
+                    worldManager.burnedIngredientsWarning = config.burnedIngredientsWarningCount;
+                    offence = new Offence(Offences.ingredientBurned.text.replace('{name}', this.ingredient.name), Offences.ingredientBurned.cost);
+                }
+
                 worldManager.applyOffence(offence);
                 return;
             }
@@ -63,34 +71,43 @@ export class Entity {
             const selectedEntity = worldManager.selectedEntity;
             worldManager.selectedEntity = undefined;
 
-            orderManager.orders.forEach((order, index) => {
-                const x = 20 + (index * 150);
-                const y = 10;
+            if (inputHandler.mouseY <= config.orderUiY) {
+                // Try to add entity to an order
+                orderManager.orders.forEach((order, index) => {
+                    const x = 20 + (index * 150);
+                    const y = 10;
+    
+                    if (inputHandler.mouseX >= x && inputHandler.mouseX <= x + Sprites.plate.width && 
+                        inputHandler.mouseY >= y && inputHandler.mouseY <= y + Sprites.plate.height) {
+                            const cookState = selectedEntity.getCookState();
+                            const addIngredientStatus = order.canAddIngredient(selectedEntity.ingredient);
+    
+                            if (addIngredientStatus === AddIngredientResult.AddBurgerBottomFirst || addIngredientStatus === AddIngredientResult.AddBurgerTopLast) {
+                                worldManager.applyOffenceByAddedIngredientResult(addIngredientStatus);
+                                return;
+                            }
+    
+                            if (selectedEntity.ingredient.shouldCook === true && cookState !== CookState.Done && cookState !== CookState.Overcooked) {
+                                worldManager.applyOffence(selectedEntity.ingredient === Ingredients.hamburger ? Offences.rawBurgerAdded : Offences.rawEggAdded);
+                                return;
+                            }
+    
+                            if (addIngredientStatus !== AddIngredientResult.Ok) {
+                                worldManager.applyOffenceByAddedIngredientResult(addIngredientStatus);
+                                return;
+                            }
+                            
+                            order.addIngredient(selectedEntity.ingredient, cookState);
+                            selectedEntity.removed = true;
+                    }
+                });
+            }
 
-                if (inputHandler.mouseX >= x && inputHandler.mouseX <= x + Sprites.plate.width && 
-                    inputHandler.mouseY >= y && inputHandler.mouseY <= y + Sprites.plate.height) {
-                        const cookState = selectedEntity.getCookState();
-                        const addIngredientStatus = order.canAddIngredient(selectedEntity.ingredient);
-
-                        if (addIngredientStatus === AddIngredientResult.AddBurgerBottomFirst || addIngredientStatus === AddIngredientResult.AddBurgerTopLast) {
-                            worldManager.applyOffenceByAddedIngredientResult(addIngredientStatus);
-                            return;
-                        }
-
-                        if (selectedEntity.ingredient.shouldCook === true && cookState !== CookState.Done) {
-                            worldManager.applyOffence(selectedEntity.ingredient === Ingredients.hamburger ? Offences.rawBurgerAdded : Offences.rawEggAdded);
-                            return;
-                        }
-
-                        if (addIngredientStatus !== AddIngredientResult.Ok) {
-                            worldManager.applyOffenceByAddedIngredientResult(addIngredientStatus);
-                            return;
-                        }
-                        
-                        order.addIngredient(selectedEntity.ingredient, cookState);
-                        selectedEntity.removed = true;
-                }
-            });
+            if (inputHandler.mouseY > config.orderUiY && inputHandler.mouseY < config.ingredientUiY) {
+                // Move entity
+                this.x = inputHandler.mouseX - (this.ingredient.sprite.width / 2);
+                this.y = inputHandler.mouseY - (this.ingredient.sprite.height / 2);
+            }
         }
     }
 
@@ -107,6 +124,10 @@ export class Entity {
             return CookState.Done;
         }
 
+        if (this.cookDuration >= this.ingredient.cookDuration && this.cookDuration < this.ingredient.cookDuration * 2.7) {
+            return CookState.Overcooked;
+        }
+
         return CookState.Burned;
     }
 
@@ -118,6 +139,9 @@ export class Entity {
             
             case CookState.Done:
                 return '#00c12a';
+
+            case CookState.Overcooked:
+                return '#ff7e23';
 
             case CookState.Burned:
                 return '#f50000';

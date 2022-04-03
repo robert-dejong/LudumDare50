@@ -10,15 +10,18 @@ import { Offences } from "../offences/offences";
 import { AddIngredientResult } from "../orders/add-ingredient-result";
 import { OrderManager } from "../orders/order-manager";
 import { PlayerStats } from "../player-stats";
+import { Sounds } from "../sound/sounds";
 import { Sprites } from "../sprites/sprites";
 
 export class WorldManager {
     public selectedEntity: Entity;
     public selectedIngredient: Ingredient;
+    public burnedIngredientsWarning: number;
     private entities: Array<Entity>;
 
     constructor(private orderManager: OrderManager, private inputHandler: InputHandler, private dialogueManager: DialogueManager, private playerStats: PlayerStats) {
         this.entities = new Array<Entity>();
+        this.burnedIngredientsWarning = 0;
     }
 
     public tick(screen: Screen): void {
@@ -30,11 +33,12 @@ export class WorldManager {
             const mouseY = this.inputHandler.mouseY;
 
             for(let ingredient of Ingredients.getIngredients()) {
-                let maxX = ingredientX + ingredient.sprite.width;
-                let y = (screen.height - 85) + ((config.ingredientSlotHeight - ingredient.sprite.height) / 2);
-                let maxY = y + ingredient.sprite.height;
+                let maxX = ingredientX + ingredient.sprite.width + 15;
+                let x = ingredientX - 15;
+                let y = (screen.height - 85) + ((config.ingredientSlotHeight - ingredient.sprite.height) / 2) - 15;
+                let maxY = y + ingredient.sprite.height + 30;
     
-                if (mouseX >= ingredientX && mouseX <= maxX && mouseY >= y && mouseY <= maxY) {
+                if (mouseX >= x && mouseX <= maxX && mouseY >= y && mouseY <= maxY) {
                     this.selectedIngredient = ingredient;
                     break;
                 }
@@ -47,7 +51,7 @@ export class WorldManager {
             const selectedIngredient = this.selectedIngredient;
             this.selectedIngredient = undefined;
 
-            if (this.inputHandler.mouseY <= 200) {
+            if (this.inputHandler.mouseY <= config.orderUiY) {
                 this.orderManager.orders.forEach((order, index) => {
                     const x = 20 + (index * 150);
                     const y = 10;
@@ -78,7 +82,7 @@ export class WorldManager {
                 return;
             }
             
-            if (this.inputHandler.mouseY >= 650) {
+            if (this.inputHandler.mouseY >= config.ingredientUiY) {
                 return;
             }
 
@@ -88,6 +92,7 @@ export class WorldManager {
             }
 
             this.addEntity(new Entity(selectedIngredient, this.inputHandler.mouseX - (selectedIngredient.sprite.width / 2), this.inputHandler.mouseY - (selectedIngredient.sprite.height / 2)));
+            Sounds.cook.play();
         }
 
         this.entities.forEach((entity) => {
@@ -95,7 +100,18 @@ export class WorldManager {
         });
 
         this.entities = this.entities.filter(entity => entity.removed === false);
-        this.orderManager.orders = this.orderManager.orders.filter(order => order.orderCompleted === false);
+        this.orderManager.orders = this.orderManager.orders.filter(order => order.orderCompleted === false && order.orderTime > 0);
+
+        if (this.orderManager.orders.length === 0) {
+            for(let i = 0; i < config.order.initialOrders; i++) {
+                // All available orders were completed
+                this.orderManager.addNewOrder();
+            }
+
+            this.playerStats.addScore(50);
+            this.playerStats.upFireMeter(8);
+            this.playerStats.level += 3;
+        }
     }
 
     public render(screen: Screen): void {
@@ -136,8 +152,17 @@ export class WorldManager {
 
     public applyOffence(offence: Offence): void {
         this.playerStats.lowerFireMeter(offence.cost);
+        Sounds.offence.play();
 
-        if (offence.text.length !== 0) this.dialogueManager.showDialogue(offence.text);
+        if (offence.text.length !== 0 && this.playerStats.fireMeter > 0) {
+            this.selectedEntity = undefined;
+            this.selectedIngredient = undefined;
+            this.inputHandler.resetClick();
+            this.inputHandler.mousePressed = false;
+            this.inputHandler.mouseX = undefined;
+            this.inputHandler.mouseY = undefined;
+            this.dialogueManager.showDialogue(offence.text);
+        }
     }
 
     public removeEntity(entityToRemove: (entity: Entity) => boolean): void {
@@ -148,5 +173,12 @@ export class WorldManager {
 
     public addEntity(entity: Entity): void {
         this.entities.push(entity);
+    }
+
+    public reset(): void {
+        this.selectedEntity = undefined;
+        this.selectedIngredient = undefined;
+        this.entities = new Array<Entity>();
+        this.burnedIngredientsWarning = 0;
     }
 }

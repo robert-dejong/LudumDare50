@@ -19,16 +19,16 @@ export class OrderManager {
         this.lastOrder = 0;
         this.orderOverflowWarning = false;
 
-        this.orders.push(new Order(this.playerStats, [ Ingredients.burgerBottom, Ingredients.hamburger, Ingredients.burgerTop ]));
-        this.orders.push(new Order(this.playerStats, [ Ingredients.burgerBottom, Ingredients.hamburger, Ingredients.cheese, Ingredients.egg, Ingredients.onion, Ingredients.tomato, Ingredients.lettuce, Ingredients.burgerTop ]));
+        for(let i = 0; i < config.order.initialOrders; i++) {
+            this.addNewOrder();
+        }
     }
 
     public tick(worldManager: WorldManager): void {
         this.lastOrder++;
 
         if (this.nextOrderIsUp()) {
-            this.orders.push(this.getNewOrder());
-            this.lastOrder = 0;
+            this.addNewOrder();
 
             if (this.orders.length > config.order.maxVisibleOrders) {
                 worldManager.applyOffence(Offences.orderOverflowContinue)
@@ -43,6 +43,16 @@ export class OrderManager {
         if (this.orders.length <= config.order.maxVisibleOrders && this.orderOverflowWarning) {
             this.orderOverflowWarning = false;
         }
+
+        this.orders.forEach((order, index) => {
+            if (index + 1 > config.order.maxVisibleOrders) return;
+
+            if (order.orderTime > 0) order.orderTime--;
+
+            if (order.orderTime <= 0) {
+                worldManager.applyOffence(Offences.orderOvertime);
+            }
+        });
     }
 
     public render(screen: Screen): void {
@@ -55,6 +65,11 @@ export class OrderManager {
             let indicatorX = x;
             let indicatorY = 15 + Sprites.plate.height;
             screen.render(Sprites.plate, x, y);
+
+            screen.renderRectangle(x, y - 3, Sprites.plate.width, 18, '#ffffff');
+            screen.renderRectangle(x + 1, y - 3 + 1, Sprites.plate.width - 2, 16, '#d30000');
+            screen.renderRectangle(x + 1, y - 3 + 1, (Sprites.plate.width - 2) * (order.orderTime / order.initialOrderTime), 16, '#00a12a');
+            screen.renderText('Time left', x + 38, y - 3 + 14, 14);
 
             order.requiredIngredients.forEach((ingredient) => {
                 screen.render(ingredient.sprite, indicatorX + config.order.indicatorIngredientSpacing, indicatorY, 1, config.order.indicatorIngredientMaxHeight);
@@ -87,6 +102,21 @@ export class OrderManager {
             screen.renderText(`+ ${overflowCount} more orders`, screen.width - 90, 80, 16, '#ffffff', 100, 600);
         }
     }
+
+    public reset(): void {
+        this.orders = new Array<Order>();
+        this.lastOrder = 0;
+        this.orderOverflowWarning = false;
+
+        for(let i = 0; i < config.order.initialOrders; i++) {
+            this.addNewOrder();
+        }
+    }
+
+    public addNewOrder(): void {
+        this.orders.push(this.getNewOrder());
+        this.lastOrder = 0;
+    }
     
     private getNewOrder(): Order {
         let ingredientList = Ingredients.getIngredients();
@@ -96,7 +126,7 @@ export class OrderManager {
             ingredient !== Ingredients.burgerTop && 
             ingredient !== Ingredients.burgerBottom && 
             ingredient !== Ingredients.hamburger && 
-            (Math.random() * 5) <= 2);
+            this.shouldAddIngredient());
 
         ingredients.push(Ingredients.burgerBottom);
         ingredients.push(Ingredients.hamburger);
@@ -108,9 +138,20 @@ export class OrderManager {
 
     private nextOrderIsUp(): boolean {
         if (this.lastOrder < config.order.minimumOrderDelay) return false;
+        if (this.playerStats.level >= 33) return true;
         
-        const random = Math.random() * 10;
+        const random = (Math.random()) * (500 - (this.playerStats.level * 15));
 
-        return random <= 1;
+        return random <= 2;
+    }
+
+    private shouldAddIngredient(): boolean {
+        if (this.playerStats.level <= 5) return (Math.random() * 4) <= 1;
+        if (this.playerStats.level <= 10) return (Math.random() * 3) <= 1;
+        if (this.playerStats.level <= 15) return (Math.random() * 5) <= 2;
+        if (this.playerStats.level <= 20) return (Math.random() * 6) <= 3;
+        if (this.playerStats.level <= 15) return (Math.random() * 7) <= 4
+        
+        return (Math.random() * 10) <= 6;
     }
 }

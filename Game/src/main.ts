@@ -5,6 +5,7 @@ import { Input } from './input/input.enum';
 import { OrderManager } from './orders/order-manager';
 import { PlayerStats } from './player-stats';
 import { DialogueManager } from './dialogue/dialogue-manager';
+import { ResetGame } from './reset-game';
 
 window['gamePaused'] = true;
 window['playSound'] = true;
@@ -16,6 +17,7 @@ class Main {
     private orderManager: OrderManager;
     private worldManager: WorldManager;
     private dialogueManager: DialogueManager;
+    private resetGame: ResetGame;
 
     private lastFrameTimeMs = 0;
     private timestep = 1000 / 60;
@@ -31,6 +33,7 @@ class Main {
         this.screen = new Screen();
         this.inputHandler = new InputHandler(this.screen);
         this.worldManager = new WorldManager(this.orderManager, this.inputHandler, this.dialogueManager, this.playerStats);
+        this.resetGame = new ResetGame(this.playerStats, this.worldManager, this.orderManager);
     }
 
     public startGame(): void {
@@ -50,9 +53,10 @@ class Main {
             }
 
             if (!window['gamePaused']) {
-                this.dialogueManager.tick(this.screen, this.inputHandler, this.playerStats);
+                this.dialogueManager.tick(this.screen, this.inputHandler, this.playerStats, this.resetGame);
 
                 if (!this.dialogueManager.isShowingDialogue) {
+                    this.playerStats.tick();
                     this.worldManager.tick(this.screen);
                 }
             }
@@ -83,7 +87,16 @@ class Main {
         this.dialogueManager.render(this.screen, this.playerStats);
 
         if (this.playerStats.fireMeter <= 0) {
-            this.screen.renderText(`Your score: ${this.playerStats.score}, completed orders: ${this.playerStats.ordersFinished}`, (this.screen.width / 2) - 150, (this.screen.height / 2) - 75, 18, '#ffffff', undefined, 600);
+            this.screen.renderText(`Your score: ${this.playerStats.score}, completed orders: ${this.playerStats.ordersFinished}`, (this.screen.width / 2) - 150, (this.screen.height / 2) - 100, 18, '#ffffff', undefined, 600);
+
+            if (localStorage.getItem('highscore') != null) {
+                if (+localStorage.getItem('highscore') > this.playerStats.score)
+                    this.screen.renderText(`You did not beat your highscore of ${localStorage.getItem('highscore')}`, (this.screen.width / 2) - 163, (this.screen.height / 2) - 70, 18, '#ffffff', undefined, 600);
+                else
+                    this.screen.renderText(`Congratulations! You beat your previous highscore of ${localStorage.getItem('highscore')}`, (this.screen.width / 2) - 235, (this.screen.height / 2) - 70, 18, '#ffffff', undefined, 600);
+            } else if(this.playerStats.score > 0) {
+                this.screen.renderText(`Congratulations! You beat your previous highscore of 0`, (this.screen.width / 2) - 235, (this.screen.height / 2) - 70, 18, '#ffffff', undefined, 600);
+            }
         }
 
         if(window['gamePaused']) {
