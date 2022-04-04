@@ -25,8 +25,7 @@ export class InputHandler {
         const pressed = type == 'keydown';
 
         window.addEventListener(type, (e: KeyboardEvent) => {
-            //console.log("Pressing key: " + e.key);
-            // e.preventDefault();
+            e.preventDefault();
             this.keysPressed[e.key] = pressed;
         });
     }
@@ -41,8 +40,6 @@ export class InputHandler {
 
             this.mouseX = e.offsetX;
             this.mouseY = e.offsetY;
-
-            //console.log(`MouseX: ${this.mouseX}, MouseY: ${this.mouseY}`);
             
             if (e.type === 'mousemove') return;
 

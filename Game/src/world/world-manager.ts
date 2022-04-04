@@ -10,6 +10,7 @@ import { Offences } from "../offences/offences";
 import { AddIngredientResult } from "../orders/add-ingredient-result";
 import { OrderManager } from "../orders/order-manager";
 import { PlayerStats } from "../player-stats";
+import { Settings } from "../settings";
 import { Sounds } from "../sound/sounds";
 import { Sprites } from "../sprites/sprites";
 
@@ -151,8 +152,11 @@ export class WorldManager {
     }
 
     public applyOffence(offence: Offence): void {
-        this.playerStats.lowerFireMeter(offence.cost);
         Sounds.offence.play();
+
+        if (Settings.easyMode()) return;
+        
+        this.playerStats.lowerFireMeter(offence.cost);
 
         if (offence.text.length !== 0 && this.playerStats.fireMeter > 0) {
             this.selectedEntity = undefined;

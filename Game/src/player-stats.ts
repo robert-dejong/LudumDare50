@@ -28,7 +28,6 @@ export class PlayerStats {
         this.orderTime -= config.order.decreaseOrderCountPerLevel;
 
         if (this.orderTime < config.order.minimumOrderTime) this.orderTime = config.order.minimumOrderTime;
-        console.log('Increased level to:', this.level);
     }
 
     public lowerFireMeter(amount: number): void {
@@ -55,7 +54,6 @@ export class PlayerStats {
     public addFinishedOrder(upFireMeter: number = 1): void {
         this.ordersFinished++;
         this.upFireMeter(upFireMeter);
-        console.log("Up fire meter:", upFireMeter);
     }
 
     public reset(): void {

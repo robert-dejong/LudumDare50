@@ -4,7 +4,7 @@ export const config = {
     renderScale: 1,
     ingredientSlotHeight: 61,
     burnedIngredientsWarningCount: 3,
-    increaseLevelTickCount: 670,
+    increaseLevelTickCount: 590,
     ingredientUiY: 640,
     orderUiY: 215,
     order: {
@@ -14,8 +14,8 @@ export const config = {
         indicatorMaxPerRow: 4,
         indicatorIngredientMaxHeight: 20,
         indicatorIngredientSpacing: 5,
-        defaultOrderTime: 2800,
+        defaultOrderTime: 2900,
         minimumOrderTime: 1500,
-        decreaseOrderCountPerLevel: 60
+        decreaseOrderCountPerLevel: 65
     }
 }

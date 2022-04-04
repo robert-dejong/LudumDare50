@@ -41,7 +41,7 @@ var config = {
     // since they are disabled by default!
     new webpack.optimize.UglifyJsPlugin({
       minimize: true,
-      sourceMap: true,
+      sourceMap: false,
       include: /\.min\.js$/,
     })
   ],

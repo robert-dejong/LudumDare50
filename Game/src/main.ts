@@ -6,9 +6,12 @@ import { OrderManager } from './orders/order-manager';
 import { PlayerStats } from './player-stats';
 import { DialogueManager } from './dialogue/dialogue-manager';
 import { ResetGame } from './reset-game';
+import { Settings } from './settings';
+import { Sprites } from './sprites/sprites';
 
 window['gamePaused'] = true;
 window['playSound'] = true;
+window['easyMode'] = false;
 
 class Main {
     private inputHandler: InputHandler;
@@ -49,7 +52,16 @@ class Main {
     
             if (this.inputHandler.isPressingKey(Input.Pause)) {
                 this.inputHandler.releaseKey(Input.Pause);
-                window['gamePaused'] = !window['gamePaused'];
+                this.inputHandler.resetClick();
+                this.inputHandler.mouseX = undefined;
+                this.inputHandler.mouseY = undefined;
+                this.worldManager.selectedEntity = undefined;
+                this.worldManager.selectedIngredient = undefined;
+
+                if (!this.dialogueManager.isShowingDialogue)
+                    window['gamePaused'] = !window['gamePaused'];
+                else
+                    this.dialogueManager.hideDialogue();
             }
 
             if (!window['gamePaused']) {
@@ -58,6 +70,23 @@ class Main {
                 if (!this.dialogueManager.isShowingDialogue) {
                     this.playerStats.tick();
                     this.worldManager.tick(this.screen);
+                }
+            }
+
+            if (window['gamePaused']) {
+                const clickX = this.inputHandler.clickX;
+                const clickY = this.inputHandler.clickY;
+                if (clickX >= this.resumeGameButtonX() && clickX <= this.resumeGameButtonX() + Sprites.button.width && 
+                    clickY >= this.resumeGameButtonY() && clickY <= this.resumeGameButtonY() + Sprites.button.height) {
+                        this.inputHandler.resetClick();
+                        window['gamePaused'] = false;
+                } else if (clickX >= this.backToMainMenuButtonX() && clickX <= this.backToMainMenuButtonX() + Sprites.button.width && 
+                    clickY >= this.backToMainMenuButtonY() && clickY <= this.backToMainMenuButtonY() + Sprites.button.height) {
+                        this.inputHandler.resetClick();
+                        window['gamePaused'] = true;
+                        this.resetGame.reset();
+                        const event = new Event('restart');
+                        window.dispatchEvent(event);
                 }
             }
 
@@ -70,7 +99,6 @@ class Main {
         let current = new Date().getTime();
         if (current - this.last >= 1000) {
             this.last = current;
-            console.log(`Ticks: ${this.ticks}, FPS: ${this.frames}`);
             this.frames = 0;
             this.ticks = 0;
         }
@@ -81,7 +109,11 @@ class Main {
     private render(): void {
         this.worldManager.render(this.screen);
 
-        this.screen.renderText(`Score: ${this.playerStats.score}`, this.screen.width - 100, this.screen.height - 67, 16, '#ffffff', undefined, 600);
+        if (!Settings.easyMode())
+            this.screen.renderText(`Score: ${this.playerStats.score}`, this.screen.width - 100, this.screen.height - 67, 16, '#ffffff', undefined, 600);
+        else
+            this.screen.renderText(`Completed orders: ${this.playerStats.ordersFinished}`, this.screen.width - 200, this.screen.height - 67, 16, '#ffffff', undefined, 600);
+
         this.renderFireMeter();
 
         this.dialogueManager.render(this.screen, this.playerStats);
@@ -100,13 +132,22 @@ class Main {
         }
 
         if(window['gamePaused']) {
-            let pauseText = 'Game is paused';
-            let width = pauseText.length * 2.4;
-            this.screen.renderText(pauseText, width, (this.screen.height / 2));
+            const width = (this.screen.width / 2) - 60;
+            const height = (this.screen.height / 2) - 100;
+            this.screen.renderRectangle(0, 0, this.screen.width, this.screen.height, '#000000', 0.5);
+            this.screen.renderText('Game paused', width, height, 18, '#ffffff', undefined, 600);
+
+            this.screen.render(Sprites.button, this.resumeGameButtonX(), this.resumeGameButtonY());
+            this.screen.renderText('Resume game', this.resumeGameButtonX() + 30, this.resumeGameButtonY() + 28, 16, '#000000', undefined, 600);
+
+            this.screen.render(Sprites.button, this.backToMainMenuButtonX(), this.backToMainMenuButtonY());
+            this.screen.renderText('Back to main menu', this.backToMainMenuButtonX() + 11, this.backToMainMenuButtonY() + 28, 16, '#000000', undefined, 600);
         }
     }
 
     private renderFireMeter(): void {
+        if (Settings.easyMode()) return;
+
         let x = this.screen.width - 330;
         let y = this.screen.height - 50;
         let width = 310;
@@ -125,6 +166,22 @@ class Main {
 
         width *= (this.playerStats.fireMeter / 100);
         this.screen.renderRectangle(x, y, width, height, '#00a12a');
+    }
+
+    private resumeGameButtonX(): number {
+        return (this.screen.width / 2) - 60 - 25;
+    }
+
+    private resumeGameButtonY(): number {
+        return (this.screen.height / 2) - 100 + 40;
+    }
+
+    private backToMainMenuButtonX(): number {
+        return this.resumeGameButtonX();
+    }
+
+    private backToMainMenuButtonY(): number {
+        return this.resumeGameButtonY() + 65;
     }
 }
 

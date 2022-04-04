@@ -7,9 +7,9 @@ export class Ingredients {
     public static burgerBottom = new Ingredient('Burger bottom', Sprites.burgerBottom, null, 550);
     public static cheese = new Ingredient('Cheese', Sprites.cheese, false);
     public static egg = new Ingredient('Fried egg', Sprites.egg, true, 700);
-    public static lettuce = new Ingredient('Lettuce', Sprites.lettuce, false);
-    public static onion = new Ingredient('Onion', Sprites.onion, null, 700);
-    public static tomato = new Ingredient('Tomato', Sprites.tomato, false);
+    public static lettuce = new Ingredient('Lettuce', Sprites.lettuce, false, 0, -10, -5);
+    public static onion = new Ingredient('Onion', Sprites.onion, null, 700, 10, 5);
+    public static tomato = new Ingredient('Tomato', Sprites.tomato, false, 0, -7, 10);
 
     public static getIngredients(): Array<Ingredient> {
         return [ 

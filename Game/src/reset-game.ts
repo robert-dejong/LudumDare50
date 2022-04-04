@@ -1,5 +1,6 @@
 import { OrderManager } from "./orders/order-manager";
 import { PlayerStats } from "./player-stats";
+import { Settings } from "./settings";
 import { WorldManager } from "./world/world-manager";
 
 export class ResetGame {
@@ -9,16 +10,18 @@ export class ResetGame {
     }
 
     public reset(): void {
-        if (localStorage.getItem('highscore') != null) {
-            const highscore = +localStorage.getItem('highscore');
-
-            if (this.playerStats.score > highscore) {
+        if (!Settings.easyMode()) {
+            if (localStorage.getItem('highscore') != null) {
+                const highscore = +localStorage.getItem('highscore');
+    
+                if (this.playerStats.score > highscore) {
+                    localStorage.setItem('highscore', `${this.playerStats.score}`);
+                }
+            } else {
                 localStorage.setItem('highscore', `${this.playerStats.score}`);
             }
-        } else {
-            localStorage.setItem('highscore', `${this.playerStats.score}`);
         }
-        
+
         this.playerStats.reset();
         this.worldManager.reset();
         this.orderManager.reset();
